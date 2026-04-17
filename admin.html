@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – HWA Packages Pricing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f5f7fc; color: #1a2540; min-height: 100vh; }
+
+    /* Header */
+    .admin-header { background: #0f2d6b; color: #fff; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .admin-header h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
+    .admin-header .btn-logout { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600; font-size: .8rem; }
+    .admin-header .btn-logout:hover { background: rgba(255,255,255,.25); }
+
+    /* Tabs */
+    .tab-nav { display: flex; gap: 2px; background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tab-btn { padding: 14px 20px; border: none; background: transparent; border-bottom: 3px solid transparent; cursor: pointer; font-family: inherit; font-weight: 600; font-size: .82rem; white-space: nowrap; color: #6b7280; transition: all .15s; }
+    .tab-btn:hover { color: #1a4fa0; }
+    .tab-btn.active { color: #1a4fa0; border-bottom-color: #1a4fa0; }
+
+    /* Layout */
+    .admin-wrap { max-width: 1000px; margin: 32px auto; padding: 0 24px 80px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Cards */
+    .admin-card { background: #fff; border-radius: 16px; padding: 28px 32px; margin-bottom: 24px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .admin-card h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 18px; color: #0f2d6b; }
+    .admin-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 14px; color: #0f2d6b; }
+    .admin-card p.desc { font-size: .82rem; color: #6b7280; margin-bottom: 14px; }
+
+    /* Formula box */
+    .formula-box { background: #f8f9fc; padding: 18px 20px; border-radius: 12px; border: 1px solid #e5e7eb; }
+    .formula-line { display: flex; gap: 10px; padding: 5px 0; font-size: .84rem; align-items: baseline; }
+    .formula-line .fl { min-width: 130px; font-weight: 600; color: #374151; flex-shrink: 0; }
+    .formula-line code { color: #1a4fa0; font-size: .84rem; }
+
+    /* Tables */
+    table.admin-table { width: 100%; border-collapse: collapse; }
+    table.admin-table th, table.admin-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: .88rem; }
+    table.admin-table th { font-weight: 700; color: #0f2d6b; background: #f0f4ff; }
+    table.admin-table input { width: 100%; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; font-size: .88rem; outline: none; }
+    table.admin-table input:focus { border-color: #1a4fa0; box-shadow: 0 0 0 3px rgba(26,79,160,.1); }
+    .param-hint { display: block; font-size: .75rem; color: #9ca3af; margin-top: 2px; }
+
+    /* Preview */
+    .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .preview-inputs { display: flex; flex-direction: column; gap: 12px; }
+    .input-row { display: flex; flex-direction: column; gap: 4px; }
+    .input-row label { font-size: .8rem; font-weight: 600; color: #374151; }
+    .input-row input, .input-row select { padding: 9px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; font-size: .88rem; outline: none; }
+    .input-row input:focus, .input-row select:focus { border-color: #1a4fa0; box-shadow: 0 0 0 3px rgba(26,79,160,.1); }
+    .preview-results { background: #f8f9fc; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
+    .result-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: .86rem; }
+    .result-row span { color: #6b7280; }
+    .result-row strong { color: #1a2540; font-weight: 600; }
+    .result-row.divider { border-top: 1px solid #d1d5db; margin-top: 4px; padding-top: 10px; }
+    .result-row.highlight strong { color: #1a4fa0; font-weight: 800; font-size: .95rem; }
+
+    /* Buttons */
+    .btn-save { background: #1a4fa0; color: #fff; border: none; padding: 12px 32px; border-radius: 50px; font-family: inherit; font-weight: 700; font-size: .9rem; cursor: pointer; transition: all .2s; }
+    .btn-save:hover { background: #0f2d6b; }
+    .btn-save:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-add { background: #e8f0ff; color: #1a4fa0; border: 1px solid #1a4fa0; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600; font-size: .8rem; }
+    .btn-add:hover { background: #d0e0ff; }
+    .btn-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.1rem; padding: 4px 8px; }
+    .save-msg { font-size: .82rem; color: #22c55e; font-weight: 600; }
+    .discount-row { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+    .discount-row input { width: 120px; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; font-size: .88rem; outline: none; }
+    .discount-row input:focus { border-color: #1a4fa0; box-shadow: 0 0 0 3px rgba(26,79,160,.1); }
+    .discount-row span { font-size: .85rem; color: #6b7280; }
+
+    /* Fixed save bar */
+    .save-bar-fixed { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e5e7eb; padding: 12px 32px; display: flex; justify-content: flex-end; align-items: center; gap: 14px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,.06); }
+
+    /* Login */
+    .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-box { background: #fff; padding: 40px; border-radius: 20px; border: 1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,.08); width: 100%; max-width: 400px; }
+    .login-box h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; color: #0f2d6b; }
+    .login-box p { font-size: .85rem; color: #6b7280; margin-bottom: 24px; }
+    .login-box label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: 6px; color: #1a2540; }
+    .login-box input { width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 10px; font-family: inherit; font-size: .9rem; margin-bottom: 16px; outline: none; }
+    .login-box input:focus { border-color: #1a4fa0; box-shadow: 0 0 0 3px rgba(26,79,160,.1); }
+    .login-box .btn-login { width: 100%; background: #1a4fa0; color: #fff; border: none; padding: 14px; border-radius: 50px; font-family: inherit; font-weight: 700; font-size: .95rem; cursor: pointer; }
+    .login-box .btn-login:hover { background: #0f2d6b; }
+    .login-error { color: #ef4444; font-size: .82rem; margin-bottom: 12px; display: none; }
+    .admin-hidden { display: none; }
+
+    /* Test Run */
+    .test-run-inputs { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 20px; }
+    .test-run-inputs .input-row { flex: 1; min-width: 140px; }
+    .btn-test { background: #059669; color: #fff; border: none; padding: 10px 24px; border-radius: 50px; font-family: inherit; font-weight: 700; font-size: .85rem; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .btn-test:hover { background: #047857; }
+    .test-results { background: #f0fdf4; border-radius: 12px; padding: 20px; border: 1px solid #bbf7d0; }
+    .test-results .result-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: .86rem; }
+    .test-results .result-row span { color: #6b7280; }
+    .test-results .result-row strong { color: #1a2540; font-weight: 600; }
+    .test-results .result-row.divider { border-top: 1px solid #86efac; margin-top: 4px; padding-top: 10px; }
+    .test-results .result-row.highlight strong { color: #059669; font-weight: 800; font-size: 1.05rem; }
+
+    @media (max-width: 640px) {
+      .preview-grid { grid-template-columns: 1fr; }
+      .tab-nav { padding: 0 12px; }
+      .tab-btn { padding: 12px 14px; font-size: .78rem; }
+      .admin-wrap { padding: 20px 16px 80px; }
+      .admin-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div id="loginSection" class="login-wrap">
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <p>Sign in to manage pricing for HWA Packages</p>
+      <div id="loginError" class="login-error"></div>
+      <label for="adminEmail">Email</label>
+      <input type="email" id="adminEmail" placeholder="admin@hwapackages.com" />
+      <label for="adminPass">Password</label>
+      <input type="password" id="adminPass" placeholder="Enter password" />
+      <button class="btn-login" id="btnLogin">Sign In</button>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL -->
+  <div id="adminSection" class="admin-hidden">
+    <div class="admin-header">
+      <h1>HWA PACKAGES — Pricing Admin</h1>
+      <button class="btn-logout" id="btnLogout">Sign Out</button>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="wcut">W-Cut</button>
+      <button class="tab-btn" data-tab="dcut">D-Cut</button>
+      <button class="tab-btn" data-tab="loop">Loop Handle</button>
+      <button class="tab-btn" data-tab="pouch">Pouch</button>
+      <button class="tab-btn" data-tab="stitch">Stitch</button>
+      <button class="tab-btn" data-tab="cake">Cake</button>
+      <button class="tab-btn" data-tab="general">General Settings</button>
+    </div>
+
+    <div class="admin-wrap">
+
+      <!-- ==================== W-CUT ==================== -->
+      <div class="tab-content active" id="tab-wcut">
+        <div class="admin-card">
+          <h2>W-Cut Bag — Costing Sheet</h2>
+          <div class="formula-box">
+            <div class="formula-line"><span class="fl">Fabric Area</span> <code>= (2 x Width + 2) x Height</code></div>
+            <div class="formula-line"><span class="fl">Bag Weight (g)</span> <code>= (Area x GSM) / 1550 / (1 + Bonus% / 100)</code></div>
+            <div class="formula-line"><span class="fl">Pcs per Kg</span> <code>= 1000 / Bag Weight</code></div>
+            <div class="formula-line"><span class="fl">Unit Price</span> <code>= (Kg Price + Print/kg) x Bag Weight / 1000</code></div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Parameters</h3>
+          <table class="admin-table">
+            <tr><td>Base Price (Rs/kg)</td><td><input type="number" step="0.01" data-bp="wcut" value="10" /></td></tr>
+            <tr><td>Bonus %<span class="param-hint">Extra pieces due to W-cut shape removing material</span></td><td><input type="number" step="1" data-bagparam="wcut.bonusPct" value="10" /></td></tr>
+          </table>
+        </div>
+        <div class="admin-card">
+          <h3>Cost Preview</h3>
+          <p class="desc">Enter sample dimensions to verify the calculation.</p>
+          <div class="preview-grid">
+            <div class="preview-inputs">
+              <div class="input-row"><label>Width (inches)</label><input type="number" class="prev-width" placeholder="10" /></div>
+              <div class="input-row"><label>Height (inches)</label><input type="number" class="prev-height" placeholder="13" /></div>
+              <div class="input-row"><label>GSM</label><select class="prev-gsm"><option value="">Select</option><option>30</option><option>35</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option></select></div>
+            </div>
+            <div class="preview-results">
+              <div class="result-row"><span>Fabric Area</span><strong class="res-area">&mdash;</strong></div>
+              <div class="result-row"><span>Bag Weight</span><strong class="res-weight">&mdash;</strong></div>
+              <div class="result-row divider"><span>Pcs per Kg</span><strong class="res-pcs">&mdash;</strong></div>
+              <div class="result-row highlight"><span>Rate per Piece</span><strong class="res-rate">&mdash;</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Test Run — Full Rate Calculation</h3>
+          <p class="desc">Uses dimensions and GSM from Cost Preview above.</p>
+          <div class="test-run-inputs">
+            <div class="input-row"><label>Quantity (pcs)</label><input type="number" class="test-pcs" placeholder="Min 1000" /></div>
+            <div class="input-row"><label>OR Quantity (kg)</label><input type="number" class="test-kg" placeholder="Min 50" /></div>
+            <div class="input-row"><label>Printing</label><select class="test-print"><option value="none">No Printing</option><option value="one">One Color</option><option value="two">Two Color</option><option value="three">Three Color</option></select></div>
+            <button class="btn-test" data-testtype="wcut">Run Test</button>
+          </div>
+          <div class="test-results" style="display:none">
+            <div class="result-row"><span>Bag Weight</span><strong class="tr-weight">&mdash;</strong></div>
+            <div class="result-row"><span>Quantity</span><strong class="tr-qty">&mdash;</strong></div>
+            <div class="result-row"><span>Unit Price (before discount)</span><strong class="tr-unit">&mdash;</strong></div>
+            <div class="result-row"><span>Bulk Discount</span><strong class="tr-discount">&mdash;</strong></div>
+            <div class="result-row divider"><span>Final Unit Price</span><strong class="tr-final">&mdash;</strong></div>
+            <div class="result-row highlight"><span>Total Estimate</span><strong class="tr-total">&mdash;</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== D-CUT ==================== -->
+      <div class="tab-content" id="tab-dcut">
+        <div class="admin-card">
+          <h2>D-Cut Bag — Costing Sheet</h2>
+          <div class="formula-box">
+            <div class="formula-line"><span class="fl">Fabric Area</span> <code>= Width x (2 x Height + Extra)</code></div>
+            <div class="formula-line"><span class="fl">Bag Weight (g)</span> <code>= (Area x GSM) / 1550</code></div>
+            <div class="formula-line"><span class="fl">Pcs per Kg</span> <code>= 1000 / Bag Weight</code></div>
+            <div class="formula-line"><span class="fl">Unit Price</span> <code>= (Kg Price + Print/kg) x Bag Weight / 1000</code></div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Parameters</h3>
+          <table class="admin-table">
+            <tr><td>Base Price (Rs/kg)</td><td><input type="number" step="0.01" data-bp="dcut" value="12" /></td></tr>
+            <tr><td>Flap Folding Size (inches)<span class="param-hint">Upper Flap Folding of Both Side Measurement</span></td><td><input type="number" step="0.5" data-bagparam="dcut.heightExtra" value="6" /></td></tr>
+          </table>
+        </div>
+        <div class="admin-card">
+          <h3>Cost Preview</h3>
+          <p class="desc">Enter sample dimensions to verify the calculation.</p>
+          <div class="preview-grid">
+            <div class="preview-inputs">
+              <div class="input-row"><label>Width (inches)</label><input type="number" class="prev-width" placeholder="14" /></div>
+              <div class="input-row"><label>Height (inches)</label><input type="number" class="prev-height" placeholder="18" /></div>
+              <div class="input-row"><label>GSM</label><select class="prev-gsm"><option value="">Select</option><option>30</option><option>35</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option></select></div>
+            </div>
+            <div class="preview-results">
+              <div class="result-row"><span>Fabric Area</span><strong class="res-area">&mdash;</strong></div>
+              <div class="result-row"><span>Bag Weight</span><strong class="res-weight">&mdash;</strong></div>
+              <div class="result-row divider"><span>Pcs per Kg</span><strong class="res-pcs">&mdash;</strong></div>
+              <div class="result-row highlight"><span>Rate per Piece</span><strong class="res-rate">&mdash;</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Test Run — Full Rate Calculation</h3>
+          <p class="desc">Uses dimensions and GSM from Cost Preview above.</p>
+          <div class="test-run-inputs">
+            <div class="input-row"><label>Quantity (pcs)</label><input type="number" class="test-pcs" placeholder="Min 1000" /></div>
+            <div class="input-row"><label>OR Quantity (kg)</label><input type="number" class="test-kg" placeholder="Min 50" /></div>
+            <div class="input-row"><label>Printing</label><select class="test-print"><option value="none">No Printing</option><option value="one">One Color</option><option value="two">Two Color</option><option value="three">Three Color</option></select></div>
+            <button class="btn-test" data-testtype="dcut">Run Test</button>
+          </div>
+          <div class="test-results" style="display:none">
+            <div class="result-row"><span>Bag Weight</span><strong class="tr-weight">&mdash;</strong></div>
+            <div class="result-row"><span>Quantity</span><strong class="tr-qty">&mdash;</strong></div>
+            <div class="result-row"><span>Unit Price (before discount)</span><strong class="tr-unit">&mdash;</strong></div>
+            <div class="result-row"><span>Bulk Discount</span><strong class="tr-discount">&mdash;</strong></div>
+            <div class="result-row divider"><span>Final Unit Price</span><strong class="tr-final">&mdash;</strong></div>
+            <div class="result-row highlight"><span>Total Estimate</span><strong class="tr-total">&mdash;</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== LOOP HANDLE ==================== -->
+      <div class="tab-content" id="tab-loop">
+        <div class="admin-card">
+          <h2>Loop Handle Bag — Costing Sheet</h2>
+          <div class="formula-box">
+            <div class="formula-line"><span class="fl">Fabric Area</span> <code>= Width x (2 x Height + Extra)</code></div>
+            <div class="formula-line"><span class="fl">Fabric Weight (g)</span> <code>= (Area x GSM) / 1550</code></div>
+            <div class="formula-line"><span class="fl">Total Weight (g)</span> <code>= Fabric Weight + Handle Weight</code></div>
+            <div class="formula-line"><span class="fl">Pcs per Kg</span> <code>= 1000 / Total Weight</code></div>
+            <div class="formula-line"><span class="fl">Unit Price</span> <code>= (Kg Price + Print/kg) x Total Weight / 1000</code></div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Parameters</h3>
+          <table class="admin-table">
+            <tr><td>Base Price (Rs/kg)</td><td><input type="number" step="0.01" data-bp="loop" value="16" /></td></tr>
+            <tr><td>Flap Folding Size (inches)<span class="param-hint">Upper Flap Folding of Both Side Measurement</span></td><td><input type="number" step="0.5" data-bagparam="loop.heightExtra" value="4" /></td></tr>
+            <tr><td>Handle Weight (grams)<span class="param-hint">Weight of loop handle material per bag</span></td><td><input type="number" step="0.1" data-bagparam="loop.handleWeightG" value="4.5" /></td></tr>
+          </table>
+        </div>
+        <div class="admin-card">
+          <h3>Cost Preview</h3>
+          <p class="desc">Enter sample dimensions to verify the calculation.</p>
+          <div class="preview-grid">
+            <div class="preview-inputs">
+              <div class="input-row"><label>Width (inches)</label><input type="number" class="prev-width" placeholder="14" /></div>
+              <div class="input-row"><label>Height (inches)</label><input type="number" class="prev-height" placeholder="18" /></div>
+              <div class="input-row"><label>GSM</label><select class="prev-gsm"><option value="">Select</option><option>30</option><option>35</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option></select></div>
+            </div>
+            <div class="preview-results">
+              <div class="result-row"><span>Fabric Area</span><strong class="res-area">&mdash;</strong></div>
+              <div class="result-row"><span>Fabric Weight</span><strong class="res-fabric">&mdash;</strong></div>
+              <div class="result-row"><span>Handle Weight</span><strong class="res-handle">&mdash;</strong></div>
+              <div class="result-row divider"><span>Total Bag Weight</span><strong class="res-weight">&mdash;</strong></div>
+              <div class="result-row"><span>Pcs per Kg</span><strong class="res-pcs">&mdash;</strong></div>
+              <div class="result-row highlight"><span>Rate per Piece</span><strong class="res-rate">&mdash;</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Test Run — Full Rate Calculation</h3>
+          <p class="desc">Uses dimensions and GSM from Cost Preview above.</p>
+          <div class="test-run-inputs">
+            <div class="input-row"><label>Quantity (pcs)</label><input type="number" class="test-pcs" placeholder="Min 1000" /></div>
+            <div class="input-row"><label>OR Quantity (kg)</label><input type="number" class="test-kg" placeholder="Min 50" /></div>
+            <div class="input-row"><label>Printing</label><select class="test-print"><option value="none">No Printing</option><option value="one">One Color</option><option value="two">Two Color</option><option value="three">Three Color</option></select></div>
+            <button class="btn-test" data-testtype="loop">Run Test</button>
+          </div>
+          <div class="test-results" style="display:none">
+            <div class="result-row"><span>Bag Weight</span><strong class="tr-weight">&mdash;</strong></div>
+            <div class="result-row"><span>Quantity</span><strong class="tr-qty">&mdash;</strong></div>
+            <div class="result-row"><span>Unit Price (before discount)</span><strong class="tr-unit">&mdash;</strong></div>
+            <div class="result-row"><span>Bulk Discount</span><strong class="tr-discount">&mdash;</strong></div>
+            <div class="result-row divider"><span>Final Unit Price</span><strong class="tr-final">&mdash;</strong></div>
+            <div class="result-row highlight"><span>Total Estimate</span><strong class="tr-total">&mdash;</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== POUCH ==================== -->
+      <div class="tab-content" id="tab-pouch">
+        <div class="admin-card">
+          <h2>Pouch — Costing Sheet</h2>
+          <div class="formula-box">
+            <div class="formula-line"><span class="fl">Fabric Area</span> <code>= Width x (2 x Height + Extra)</code></div>
+            <div class="formula-line"><span class="fl">Bag Weight (g)</span> <code>= (Area x GSM) / 1550</code></div>
+            <div class="formula-line"><span class="fl">Pcs per Kg</span> <code>= 1000 / Bag Weight</code></div>
+            <div class="formula-line"><span class="fl">Unit Price</span> <code>= (Kg Price + Print/kg) x Bag Weight / 1000</code></div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Parameters</h3>
+          <table class="admin-table">
+            <tr><td>Base Price (Rs/kg)</td><td><input type="number" step="0.01" data-bp="pouch" value="5.98" /></td></tr>
+            <tr><td>Flap Folding Size (inches)<span class="param-hint">Extra material for seal/fold area</span></td><td><input type="number" step="0.5" data-bagparam="pouch.heightExtra" value="6" /></td></tr>
+          </table>
+        </div>
+        <div class="admin-card">
+          <h3>Cost Preview</h3>
+          <p class="desc">Enter sample dimensions to verify the calculation.</p>
+          <div class="preview-grid">
+            <div class="preview-inputs">
+              <div class="input-row"><label>Width (inches)</label><input type="number" class="prev-width" placeholder="8" /></div>
+              <div class="input-row"><label>Height (inches)</label><input type="number" class="prev-height" placeholder="12" /></div>
+              <div class="input-row"><label>GSM</label><select class="prev-gsm"><option value="">Select</option><option>30</option><option>35</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option></select></div>
+            </div>
+            <div class="preview-results">
+              <div class="result-row"><span>Fabric Area</span><strong class="res-area">&mdash;</strong></div>
+              <div class="result-row"><span>Bag Weight</span><strong class="res-weight">&mdash;</strong></div>
+              <div class="result-row divider"><span>Pcs per Kg</span><strong class="res-pcs">&mdash;</strong></div>
+              <div class="result-row highlight"><span>Rate per Piece</span><strong class="res-rate">&mdash;</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Test Run — Full Rate Calculation</h3>
+          <p class="desc">Uses dimensions and GSM from Cost Preview above.</p>
+          <div class="test-run-inputs">
+            <div class="input-row"><label>Quantity (pcs)</label><input type="number" class="test-pcs" placeholder="Min 1000" /></div>
+            <div class="input-row"><label>OR Quantity (kg)</label><input type="number" class="test-kg" placeholder="Min 50" /></div>
+            <div class="input-row"><label>Printing</label><select class="test-print"><option value="none">No Printing</option><option value="one">One Color</option><option value="two">Two Color</option><option value="three">Three Color</option></select></div>
+            <button class="btn-test" data-testtype="pouch">Run Test</button>
+          </div>
+          <div class="test-results" style="display:none">
+            <div class="result-row"><span>Bag Weight</span><strong class="tr-weight">&mdash;</strong></div>
+            <div class="result-row"><span>Quantity</span><strong class="tr-qty">&mdash;</strong></div>
+            <div class="result-row"><span>Unit Price (before discount)</span><strong class="tr-unit">&mdash;</strong></div>
+            <div class="result-row"><span>Bulk Discount</span><strong class="tr-discount">&mdash;</strong></div>
+            <div class="result-row divider"><span>Final Unit Price</span><strong class="tr-final">&mdash;</strong></div>
+            <div class="result-row highlight"><span>Total Estimate</span><strong class="tr-total">&mdash;</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== STITCH ==================== -->
+      <div class="tab-content" id="tab-stitch">
+        <div class="admin-card">
+          <h2>Stitch Bag — Costing Sheet</h2>
+          <div class="formula-box">
+            <div class="formula-line"><span class="fl">Main Palla (g)</span> <code>= (2H + G + 4) x W x GSM / 1550</code></div>
+            <div class="formula-line"><span class="fl">Side Gussets (g)</span> <code>= 2 x G x (H + 3) x GSM / 1550</code></div>
+            <div class="formula-line"><span class="fl">Handles (g)</span> <code>= 2 x 2" x HandleLen x GSM / 1550</code></div>
+            <div class="formula-line"><span class="fl">Maghzi (g)</span> <code>= MaghziW x (2H + G + 5) x GSM / 1550</code></div>
+            <div class="formula-line"><span class="fl">Total Weight</span> <code>= Main + Gussets + Handles + Maghzi</code></div>
+            <div class="formula-line"><span class="fl">Unit Price</span> <code>= (Kg Price + Print/kg) x Weight / 1000 + Stitch Cost</code></div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Parameters</h3>
+          <table class="admin-table">
+            <tr><td>Base Price (Rs/kg)</td><td><input type="number" step="0.01" data-bp="stitch" value="30" /></td></tr>
+            <tr><td>Handle Length (inches)<span class="param-hint">Length of each handle strip (2" wide)</span></td><td><input type="number" step="1" data-bagparam="stitch.handleLen" value="20" /></td></tr>
+            <tr><td>Maghzi Width (inches)<span class="param-hint">Width of binding/edge strip</span></td><td><input type="number" step="0.1" data-bagparam="stitch.maghziW" value="1.5" /></td></tr>
+            <tr><td>Stitch Cost (Rs/piece)<span class="param-hint">Stitching labour cost per bag</span></td><td><input type="number" step="0.5" data-bagparam="stitch.stitchCost" value="0" /></td></tr>
+          </table>
+        </div>
+        <div class="admin-card">
+          <h3>Cost Preview</h3>
+          <p class="desc">Enter sample dimensions to verify the calculation.</p>
+          <div class="preview-grid">
+            <div class="preview-inputs">
+              <div class="input-row"><label>Width (inches)</label><input type="number" class="prev-width" placeholder="12" /></div>
+              <div class="input-row"><label>Height (inches)</label><input type="number" class="prev-height" placeholder="12" /></div>
+              <div class="input-row"><label>Gusset (inches)</label><input type="number" class="prev-gusset" placeholder="5" /></div>
+              <div class="input-row"><label>GSM</label><select class="prev-gsm"><option value="">Select</option><option>30</option><option>35</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option></select></div>
+            </div>
+            <div class="preview-results">
+              <div class="result-row"><span>Main Palla</span><strong class="res-main">&mdash;</strong></div>
+              <div class="result-row"><span>Side Gussets</span><strong class="res-gussets">&mdash;</strong></div>
+              <div class="result-row"><span>Handles</span><strong class="res-handles">&mdash;</strong></div>
+              <div class="result-row"><span>Maghzi</span><strong class="res-maghzi">&mdash;</strong></div>
+              <div class="result-row"><span>Stitch Cost</span><strong class="res-stitch">&mdash;</strong></div>
+              <div class="result-row divider"><span>Total Weight</span><strong class="res-weight">&mdash;</strong></div>
+              <div class="result-row"><span>Pcs per Kg</span><strong class="res-pcs">&mdash;</strong></div>
+              <div class="result-row highlight"><span>Rate per Piece</span><strong class="res-rate">&mdash;</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Test Run — Full Rate Calculation</h3>
+          <p class="desc">Uses dimensions and GSM from Cost Preview above.</p>
+          <div class="test-run-inputs">
+            <div class="input-row"><label>Quantity (pcs)</label><input type="number" class="test-pcs" placeholder="Min 1000" /></div>
+            <div class="input-row"><label>OR Quantity (kg)</label><input type="number" class="test-kg" placeholder="Min 50" /></div>
+            <div class="input-row"><label>Printing</label><select class="test-print"><option value="none">No Printing</option><option value="one">One Color</option><option value="two">Two Color</option><option value="three">Three Color</option></select></div>
+            <button class="btn-test" data-testtype="stitch">Run Test</button>
+          </div>
+          <div class="test-results" style="display:none">
+            <div class="result-row"><span>Bag Weight</span><strong class="tr-weight">&mdash;</strong></div>
+            <div class="result-row"><span>Quantity</span><strong class="tr-qty">&mdash;</strong></div>
+            <div class="result-row"><span>Unit Price (before discount)</span><strong class="tr-unit">&mdash;</strong></div>
+            <div class="result-row"><span>Bulk Discount</span><strong class="tr-discount">&mdash;</strong></div>
+            <div class="result-row divider"><span>Final Unit Price</span><strong class="tr-final">&mdash;</strong></div>
+            <div class="result-row highlight"><span>Total Estimate</span><strong class="tr-total">&mdash;</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== CAKE ==================== -->
+      <div class="tab-content" id="tab-cake">
+        <div class="admin-card">
+          <h2>Cake Bag — Costing Sheet</h2>
+          <div class="formula-box">
+            <div class="formula-line"><span class="fl">Main Palla (g)</span> <code>= (2H + G + 4) x W x GSM / 1550</code></div>
+            <div class="formula-line"><span class="fl">Side Gussets (g)</span> <code>= 2 x G x (H + 3) x GSM / 1550</code></div>
+            <div class="formula-line"><span class="fl">Handles (g)</span> <code>= 2 x 2" x HandleLen x GSM / 1550</code></div>
+            <div class="formula-line"><span class="fl">Maghzi (g)</span> <code>= MaghziW x (2H + G + 5) x GSM / 1550</code></div>
+            <div class="formula-line"><span class="fl">Total Weight</span> <code>= Main + Gussets + Handles + Maghzi</code></div>
+            <div class="formula-line"><span class="fl">Unit Price</span> <code>= (Kg Price + Print/kg) x Weight / 1000 + Stitch Cost</code></div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Parameters</h3>
+          <table class="admin-table">
+            <tr><td>Base Price (Rs/kg)</td><td><input type="number" step="0.01" data-bp="cake" value="19" /></td></tr>
+            <tr><td>Handle Length (inches)<span class="param-hint">Length of each handle strip (2" wide)</span></td><td><input type="number" step="1" data-bagparam="cake.handleLen" value="20" /></td></tr>
+            <tr><td>Maghzi Width (inches)<span class="param-hint">Width of binding/edge strip</span></td><td><input type="number" step="0.1" data-bagparam="cake.maghziW" value="1.5" /></td></tr>
+            <tr><td>Stitch Cost (Rs/piece)<span class="param-hint">Stitching labour cost per bag</span></td><td><input type="number" step="0.5" data-bagparam="cake.stitchCost" value="0" /></td></tr>
+          </table>
+        </div>
+        <div class="admin-card">
+          <h3>Cost Preview</h3>
+          <p class="desc">Enter sample dimensions to verify the calculation.</p>
+          <div class="preview-grid">
+            <div class="preview-inputs">
+              <div class="input-row"><label>Width (inches)</label><input type="number" class="prev-width" placeholder="9" /></div>
+              <div class="input-row"><label>Height (inches)</label><input type="number" class="prev-height" placeholder="9" /></div>
+              <div class="input-row"><label>Gusset (inches)</label><input type="number" class="prev-gusset" placeholder="5" /></div>
+              <div class="input-row"><label>GSM</label><select class="prev-gsm"><option value="">Select</option><option>30</option><option>35</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option></select></div>
+            </div>
+            <div class="preview-results">
+              <div class="result-row"><span>Main Palla</span><strong class="res-main">&mdash;</strong></div>
+              <div class="result-row"><span>Side Gussets</span><strong class="res-gussets">&mdash;</strong></div>
+              <div class="result-row"><span>Handles</span><strong class="res-handles">&mdash;</strong></div>
+              <div class="result-row"><span>Maghzi</span><strong class="res-maghzi">&mdash;</strong></div>
+              <div class="result-row"><span>Stitch Cost</span><strong class="res-stitch">&mdash;</strong></div>
+              <div class="result-row divider"><span>Total Weight</span><strong class="res-weight">&mdash;</strong></div>
+              <div class="result-row"><span>Pcs per Kg</span><strong class="res-pcs">&mdash;</strong></div>
+              <div class="result-row highlight"><span>Rate per Piece</span><strong class="res-rate">&mdash;</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <h3>Test Run — Full Rate Calculation</h3>
+          <p class="desc">Uses dimensions and GSM from Cost Preview above.</p>
+          <div class="test-run-inputs">
+            <div class="input-row"><label>Quantity (pcs)</label><input type="number" class="test-pcs" placeholder="Min 1000" /></div>
+            <div class="input-row"><label>OR Quantity (kg)</label><input type="number" class="test-kg" placeholder="Min 50" /></div>
+            <div class="input-row"><label>Printing</label><select class="test-print"><option value="none">No Printing</option><option value="one">One Color</option><option value="two">Two Color</option><option value="three">Three Color</option></select></div>
+            <button class="btn-test" data-testtype="cake">Run Test</button>
+          </div>
+          <div class="test-results" style="display:none">
+            <div class="result-row"><span>Bag Weight</span><strong class="tr-weight">&mdash;</strong></div>
+            <div class="result-row"><span>Quantity</span><strong class="tr-qty">&mdash;</strong></div>
+            <div class="result-row"><span>Unit Price (before discount)</span><strong class="tr-unit">&mdash;</strong></div>
+            <div class="result-row"><span>Bulk Discount</span><strong class="tr-discount">&mdash;</strong></div>
+            <div class="result-row divider"><span>Final Unit Price</span><strong class="tr-final">&mdash;</strong></div>
+            <div class="result-row highlight"><span>Total Estimate</span><strong class="tr-total">&mdash;</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== GENERAL SETTINGS ==================== -->
+      <div class="tab-content" id="tab-general">
+        <div class="admin-card">
+          <h2>Pricing Formula Overview</h2>
+          <div class="formula-box">
+            <div class="formula-line"><span class="fl">Unit Price</span> <code>= (Kg Price + Print Addon/kg) x Bag Weight (kg)</code></div>
+            <div class="formula-line"><span class="fl">Final Price</span> <code>= Unit Price x Bulk Discount</code></div>
+            <div class="formula-line"><span class="fl">Total</span> <code>= Final Price x Quantity</code></div>
+          </div>
+          <p class="desc" style="margin-top:14px">Bag Weight formula varies per bag type — see each tab for the specific calculation.</p>
+        </div>
+
+        <div class="admin-card">
+          <h2>Printing Add-ons (Rs. per kg)</h2>
+          <p class="desc">Multiplied by bag weight (kg) and added to the unit price.</p>
+          <table class="admin-table">
+            <thead><tr><th>Print Type</th><th>Add-on (Rs.)</th></tr></thead>
+            <tbody id="printBody"></tbody>
+          </table>
+        </div>
+
+        <div class="admin-card">
+          <h2>Bulk Discounts</h2>
+          <p class="desc">Discount applied based on quantity. Enter as a decimal (e.g., 0.92 = 8% discount). Checked from highest quantity first.</p>
+          <div id="discountsContainer"></div>
+          <button class="btn-add" id="btnAddDiscount" style="margin-top: 12px;">+ Add Tier</button>
+        </div>
+      </div>
+
+    </div><!-- /admin-wrap -->
+
+    <!-- Fixed Save Bar -->
+    <div class="save-bar-fixed">
+      <span class="save-msg" id="saveMsg"></span>
+      <button class="btn-save" id="btnSave">Save All Changes</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const loginSection = document.getElementById('loginSection');
+    const adminSection = document.getElementById('adminSection');
+    const loginError = document.getElementById('loginError');
+
+    const typeLabels = {
+      wcut: 'W-Cut Bag', dcut: 'D-Cut Bag', loop: 'Loop Handle Bag',
+      cake: 'Cake Bag', stitch: 'Stitch Bag', pouch: 'Pouch'
+    };
+    const printLabels = {
+      none: 'No Printing', one: 'One Color', two: 'Two Color',
+      three: 'Three Color'
+    };
+
+    let pricingData = {};
+
+    // ---- Auth ----
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        loginSection.style.display = 'none';
+        adminSection.classList.remove('admin-hidden');
+        loadPricing();
+      } else {
+        loginSection.style.display = 'flex';
+        adminSection.classList.add('admin-hidden');
+      }
+    });
+
+    document.getElementById('btnLogin').addEventListener('click', () => {
+      const email = document.getElementById('adminEmail').value;
+      const pass = document.getElementById('adminPass').value;
+      loginError.style.display = 'none';
+      auth.signInWithEmailAndPassword(email, pass).catch(err => {
+        loginError.textContent = err.message;
+        loginError.style.display = 'block';
+      });
+    });
+
+    document.getElementById('adminPass').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btnLogin').click();
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', () => auth.signOut());
+
+    // ---- Tab Switching ----
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ---- Defaults ----
+    function getDefaults() {
+      return {
+        basePrices: { wcut: 10, dcut: 12, loop: 16, cake: 19, stitch: 30, pouch: 5.98 },
+        bagParams: {
+          wcut: { bonusPct: 10 },
+          dcut: { heightExtra: 6 },
+          loop: { heightExtra: 4, handleWeightG: 4.5 },
+          pouch: { heightExtra: 6 },
+          stitch: { handleLen: 20, maghziW: 1.5, stitchCost: 0 },
+          cake: { handleLen: 20, maghziW: 1.5, stitchCost: 0 }
+        },
+        printAddon: { none: 0, one: 2, two: 4, three: 6 },
+        bulkDiscounts: [
+          { minQty: 5000, discount: 0.82 },
+          { minQty: 2000, discount: 0.88 },
+          { minQty: 1000, discount: 0.92 },
+          { minQty: 500, discount: 0.96 }
+        ]
+      };
+    }
+
+    // ---- Load & Populate ----
+    function loadPricing() {
+      db.ref('pricing').once('value').then(snap => {
+        const data = snap.val();
+        if (data && data.basePrices) {
+          pricingData = data;
+        } else {
+          pricingData = getDefaults();
+          db.ref('pricing').set(pricingData);
+        }
+        if (!pricingData.bagParams) pricingData.bagParams = getDefaults().bagParams;
+        populateAll();
+      }).catch(() => {
+        pricingData = getDefaults();
+        populateAll();
+      });
+    }
+
+    function populateAll() {
+      const defaults = getDefaults();
+
+      // Fill base prices into each tab
+      document.querySelectorAll('[data-bp]').forEach(input => {
+        const val = pricingData.basePrices[input.dataset.bp];
+        if (val != null) input.value = val;
+      });
+
+      // Fill bag params into each tab
+      document.querySelectorAll('[data-bagparam]').forEach(input => {
+        const [type, key] = input.dataset.bagparam.split('.');
+        const val = (pricingData.bagParams[type] || {})[key];
+        const def = (defaults.bagParams[type] || {})[key];
+        input.value = val != null ? val : (def != null ? def : input.value);
+      });
+
+      // Render print add-ons
+      const printBody = document.getElementById('printBody');
+      printBody.innerHTML = '';
+      const printData = pricingData.printAddon || defaults.printAddon;
+      // Remove digital from data if it exists
+      delete printData.digital;
+      Object.keys(printData).forEach(key => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${printLabels[key] || key}</td><td><input type="number" step="0.01" data-print="${key}" value="${printData[key]}" /></td>`;
+        printBody.appendChild(tr);
+      });
+
+      // Render bulk discounts
+      renderDiscounts();
+
+      // Bind preview auto-update
+      bindPreviews();
+
+      // Bind test run buttons
+      document.querySelectorAll('.btn-test').forEach(btn => {
+        btn.addEventListener('click', () => runTest(btn.dataset.testtype));
+      });
+
+      // Mutual exclusivity: pcs clears kg, kg clears pcs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        const pcs = tab.querySelector('.test-pcs');
+        const kg = tab.querySelector('.test-kg');
+        if (pcs && kg) {
+          pcs.addEventListener('input', () => { if (pcs.value) kg.value = ''; });
+          kg.addEventListener('input', () => { if (kg.value) pcs.value = ''; });
+        }
+      });
+    }
+
+    // ---- Bulk Discounts ----
+    function renderDiscounts() {
+      const container = document.getElementById('discountsContainer');
+      container.innerHTML = '';
+      (pricingData.bulkDiscounts || []).forEach((d, i) => {
+        const row = document.createElement('div');
+        row.className = 'discount-row';
+        row.innerHTML = `
+          <span>Min Qty:</span>
+          <input type="number" data-dqty="${i}" value="${d.minQty}" />
+          <span>Multiplier:</span>
+          <input type="number" step="0.01" data-ddisc="${i}" value="${d.discount}" />
+          <button class="btn-remove" data-dremove="${i}">&times;</button>
+        `;
+        container.appendChild(row);
+      });
+      container.querySelectorAll('.btn-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          pricingData.bulkDiscounts.splice(parseInt(btn.dataset.dremove), 1);
+          renderDiscounts();
+        });
+      });
+    }
+
+    document.getElementById('btnAddDiscount').addEventListener('click', () => {
+      if (!pricingData.bulkDiscounts) pricingData.bulkDiscounts = [];
+      pricingData.bulkDiscounts.push({ minQty: 100, discount: 0.98 });
+      renderDiscounts();
+    });
+
+    // ---- Preview Calculation ----
+    function bindPreviews() {
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        const type = tab.id.replace('tab-', '');
+        if (type === 'general') return;
+        tab.querySelectorAll('input, select').forEach(input => {
+          input.addEventListener('input', () => updatePreview(type));
+        });
+      });
+    }
+
+    function updatePreview(type) {
+      const tab = document.getElementById('tab-' + type);
+      const res = tab.querySelector('.preview-results');
+      const w = parseFloat(tab.querySelector('.prev-width')?.value) || 0;
+      const h = parseFloat(tab.querySelector('.prev-height')?.value) || 0;
+      const g = parseFloat(tab.querySelector('.prev-gusset')?.value) || 0;
+      const gsm = parseFloat(tab.querySelector('.prev-gsm')?.value) || 0;
+      const basePrice = parseFloat(tab.querySelector('[data-bp]')?.value) || 0;
+
+      // Reset if incomplete
+      const needsGusset = (type === 'stitch' || type === 'cake');
+      if (!w || !h || !gsm || (needsGusset && !g)) {
+        res.querySelectorAll('strong').forEach(el => el.textContent = '\u2014');
+        return;
+      }
+
+      let bagWeightGrams, area;
+
+      switch (type) {
+        case 'wcut': {
+          const bonusPct = parseFloat(tab.querySelector('[data-bagparam="wcut.bonusPct"]')?.value) || 10;
+          area = (2 * w + 2) * h;
+          bagWeightGrams = (area * gsm) / 1550 / (1 + bonusPct / 100);
+          const aEl = res.querySelector('.res-area');
+          if (aEl) aEl.textContent = area.toFixed(1) + ' sq in';
+          break;
+        }
+        case 'dcut': {
+          const extra = parseFloat(tab.querySelector('[data-bagparam="dcut.heightExtra"]')?.value) || 6;
+          area = w * (2 * h + extra);
+          bagWeightGrams = (area * gsm) / 1550;
+          const aEl = res.querySelector('.res-area');
+          if (aEl) aEl.textContent = area.toFixed(1) + ' sq in';
+          break;
+        }
+        case 'loop': {
+          const extra = parseFloat(tab.querySelector('[data-bagparam="loop.heightExtra"]')?.value) || 4;
+          const handleW = parseFloat(tab.querySelector('[data-bagparam="loop.handleWeightG"]')?.value) || 4.5;
+          area = w * (2 * h + extra);
+          const fabricW = (area * gsm) / 1550;
+          bagWeightGrams = fabricW + handleW;
+          const aEl = res.querySelector('.res-area');
+          if (aEl) aEl.textContent = area.toFixed(1) + ' sq in';
+          const fEl = res.querySelector('.res-fabric');
+          if (fEl) fEl.textContent = fabricW.toFixed(2) + ' g';
+          const hEl = res.querySelector('.res-handle');
+          if (hEl) hEl.textContent = handleW.toFixed(2) + ' g';
+          break;
+        }
+        case 'pouch': {
+          const extra = parseFloat(tab.querySelector('[data-bagparam="pouch.heightExtra"]')?.value) || 6;
+          area = w * (2 * h + extra);
+          bagWeightGrams = (area * gsm) / 1550;
+          const aEl = res.querySelector('.res-area');
+          if (aEl) aEl.textContent = area.toFixed(1) + ' sq in';
+          break;
+        }
+        case 'stitch':
+        case 'cake': {
+          const handleLen = parseFloat(tab.querySelector(`[data-bagparam="${type}.handleLen"]`)?.value) || 20;
+          const maghziW = parseFloat(tab.querySelector(`[data-bagparam="${type}.maghziW"]`)?.value) || 1.5;
+          const mainPalla = ((2 * h + g + 4) * w * gsm) / 1550;
+          const sideGussets = 2 * ((g * (h + 3)) * gsm / 1550);
+          const handles = (2 * 2 * handleLen * gsm) / 1550;
+          const maghzi = (maghziW * (2 * h + g + 5) * gsm) / 1550;
+          bagWeightGrams = mainPalla + sideGussets + handles + maghzi;
+          const mEl = res.querySelector('.res-main');
+          if (mEl) mEl.textContent = mainPalla.toFixed(2) + ' g';
+          const gEl = res.querySelector('.res-gussets');
+          if (gEl) gEl.textContent = sideGussets.toFixed(2) + ' g';
+          const hEl = res.querySelector('.res-handles');
+          if (hEl) hEl.textContent = handles.toFixed(2) + ' g';
+          const mgEl = res.querySelector('.res-maghzi');
+          if (mgEl) mgEl.textContent = maghzi.toFixed(2) + ' g';
+          const stitchCost = parseFloat(tab.querySelector(`[data-bagparam="${type}.stitchCost"]`)?.value) || 0;
+          const scEl = res.querySelector('.res-stitch');
+          if (scEl) scEl.textContent = 'Rs. ' + stitchCost.toFixed(2);
+          break;
+        }
+      }
+
+      const pcsPerKg = 1000 / bagWeightGrams;
+      let stitchAddon = 0;
+      if (type === 'stitch' || type === 'cake') {
+        stitchAddon = parseFloat(tab.querySelector(`[data-bagparam="${type}.stitchCost"]`)?.value) || 0;
+      }
+      const ratePerPiece = (basePrice) * (bagWeightGrams / 1000) + stitchAddon;
+
+      const wEl = res.querySelector('.res-weight');
+      if (wEl) wEl.textContent = bagWeightGrams.toFixed(2) + ' g';
+      const pEl = res.querySelector('.res-pcs');
+      if (pEl) pEl.textContent = pcsPerKg.toFixed(1);
+      const rEl = res.querySelector('.res-rate');
+      if (rEl) rEl.textContent = 'Rs. ' + ratePerPiece.toFixed(2);
+    }
+
+    // ---- Test Run ----
+    function runTest(type) {
+      const tab = document.getElementById('tab-' + type);
+      const testCard = tab.querySelector('.test-results');
+      const w = parseFloat(tab.querySelector('.prev-width')?.value) || 0;
+      const h = parseFloat(tab.querySelector('.prev-height')?.value) || 0;
+      const g = parseFloat(tab.querySelector('.prev-gusset')?.value) || 0;
+      const gsm = parseFloat(tab.querySelector('.prev-gsm')?.value) || 0;
+      const basePrice = parseFloat(tab.querySelector('[data-bp]')?.value) || 0;
+      const qtyPcs = parseInt(tab.querySelector('.test-pcs')?.value) || 0;
+      const qtyKg = parseFloat(tab.querySelector('.test-kg')?.value) || 0;
+      const print = tab.querySelector('.test-print')?.value || 'none';
+
+      const needsGusset = (type === 'stitch' || type === 'cake');
+      const hasPcs = qtyPcs >= 1000;
+      const hasKg = qtyKg >= 50;
+
+      if (!w || !h || !gsm || (needsGusset && !g)) {
+        alert('Please fill Width, Height' + (needsGusset ? ', Gusset' : '') + ' and GSM in Cost Preview above.');
+        return;
+      }
+      if (!hasPcs && !hasKg) {
+        alert('Enter at least 1000 pcs or 50 kg.');
+        return;
+      }
+
+      // Calculate bag weight (same logic as updatePreview)
+      let bagWeightGrams;
+      switch (type) {
+        case 'wcut': {
+          const bonusPct = parseFloat(tab.querySelector('[data-bagparam="wcut.bonusPct"]')?.value) || 10;
+          bagWeightGrams = ((2 * w + 2) * h * gsm) / 1550 / (1 + bonusPct / 100);
+          break;
+        }
+        case 'dcut': {
+          const extra = parseFloat(tab.querySelector('[data-bagparam="dcut.heightExtra"]')?.value) || 6;
+          bagWeightGrams = (w * (2 * h + extra) * gsm) / 1550;
+          break;
+        }
+        case 'loop': {
+          const extra = parseFloat(tab.querySelector('[data-bagparam="loop.heightExtra"]')?.value) || 4;
+          const handleW = parseFloat(tab.querySelector('[data-bagparam="loop.handleWeightG"]')?.value) || 4.5;
+          bagWeightGrams = (w * (2 * h + extra) * gsm) / 1550 + handleW;
+          break;
+        }
+        case 'pouch': {
+          const extra = parseFloat(tab.querySelector('[data-bagparam="pouch.heightExtra"]')?.value) || 6;
+          bagWeightGrams = (w * (2 * h + extra) * gsm) / 1550;
+          break;
+        }
+        case 'stitch':
+        case 'cake': {
+          const handleLen = parseFloat(tab.querySelector(`[data-bagparam="${type}.handleLen"]`)?.value) || 20;
+          const maghziW = parseFloat(tab.querySelector(`[data-bagparam="${type}.maghziW"]`)?.value) || 1.5;
+          const mainPalla = ((2 * h + g + 4) * w * gsm) / 1550;
+          const sideGussets = 2 * ((g * (h + 3)) * gsm / 1550);
+          const handles = (2 * 2 * handleLen * gsm) / 1550;
+          const maghzi = (maghziW * (2 * h + g + 5) * gsm) / 1550;
+          bagWeightGrams = mainPalla + sideGussets + handles + maghzi;
+          break;
+        }
+      }
+
+      const bagWeightKg = bagWeightGrams / 1000;
+
+      // Determine quantity in pieces
+      let qty, qtyLabel;
+      if (hasPcs) {
+        qty = qtyPcs;
+        qtyLabel = qty.toLocaleString() + ' pcs';
+      } else {
+        qty = Math.round(qtyKg / bagWeightKg);
+        qtyLabel = qtyKg + ' kg (~' + qty.toLocaleString() + ' pcs)';
+      }
+
+      // Get print addon from General tab
+      const printInput = document.querySelector(`[data-print="${print}"]`);
+      const printAddon = printInput ? parseFloat(printInput.value) || 0 : 0;
+
+      // Stitch cost for stitch/cake bags
+      let stitchAddon = 0;
+      if (type === 'stitch' || type === 'cake') {
+        stitchAddon = parseFloat(tab.querySelector(`[data-bagparam="${type}.stitchCost"]`)?.value) || 0;
+      }
+
+      // Unit price: print addon is per kg, multiply by bag weight
+      const unitPrice = (basePrice + printAddon) * bagWeightKg + stitchAddon;
+
+      // Bulk discount
+      const discounts = pricingData.bulkDiscounts || [];
+      const sorted = [...discounts].sort((a, b) => b.minQty - a.minQty);
+      let discount = 1;
+      for (const tier of sorted) {
+        if (qty >= tier.minQty) { discount = tier.discount; break; }
+      }
+      const discountPct = Math.round((1 - discount) * 100);
+
+      const finalUnit = unitPrice * discount;
+      const total = finalUnit * qty;
+
+      // Show results
+      testCard.style.display = 'block';
+      testCard.querySelector('.tr-weight').textContent = bagWeightGrams.toFixed(2) + ' g';
+      testCard.querySelector('.tr-qty').textContent = qtyLabel;
+      testCard.querySelector('.tr-unit').textContent = 'Rs. ' + unitPrice.toFixed(2);
+      testCard.querySelector('.tr-discount').textContent = discountPct > 0 ? discountPct + '% off (x' + discount + ')' : 'None';
+      testCard.querySelector('.tr-final').textContent = 'Rs. ' + finalUnit.toFixed(2);
+      testCard.querySelector('.tr-total').textContent = 'Rs. ' + total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    // ---- Save ----
+    document.getElementById('btnSave').addEventListener('click', () => {
+      const btn = document.getElementById('btnSave');
+      btn.disabled = true;
+
+      // Collect base prices from all tabs
+      document.querySelectorAll('[data-bp]').forEach(input => {
+        pricingData.basePrices[input.dataset.bp] = parseFloat(input.value) || 0;
+      });
+
+      // Collect bag params from all tabs
+      if (!pricingData.bagParams) pricingData.bagParams = {};
+      document.querySelectorAll('[data-bagparam]').forEach(input => {
+        const [type, key] = input.dataset.bagparam.split('.');
+        if (!pricingData.bagParams[type]) pricingData.bagParams[type] = {};
+        pricingData.bagParams[type][key] = parseFloat(input.value) || 0;
+      });
+
+      // Collect print add-ons
+      delete pricingData.printAddon.digital;
+      document.querySelectorAll('[data-print]').forEach(input => {
+        pricingData.printAddon[input.dataset.print] = parseFloat(input.value) || 0;
+      });
+
+      // Collect discounts
+      document.querySelectorAll('[data-dqty]').forEach(input => {
+        const i = parseInt(input.dataset.dqty);
+        pricingData.bulkDiscounts[i].minQty = parseInt(input.value) || 0;
+      });
+      document.querySelectorAll('[data-ddisc]').forEach(input => {
+        const i = parseInt(input.dataset.ddisc);
+        pricingData.bulkDiscounts[i].discount = parseFloat(input.value) || 1;
+      });
+
+      // Sort discounts descending
+      pricingData.bulkDiscounts.sort((a, b) => b.minQty - a.minQty);
+
+      // Remove legacy fields
+      delete pricingData.baseArea;
+
+      db.ref('pricing').set(pricingData).then(() => {
+        btn.disabled = false;
+        const msg = document.getElementById('saveMsg');
+        msg.textContent = 'Saved successfully!';
+        setTimeout(() => msg.textContent = '', 3000);
+      }).catch(err => {
+        btn.disabled = false;
+        alert('Error saving: ' + err.message);
+      });
+    });
+  </script>
+</body>
+</html>
