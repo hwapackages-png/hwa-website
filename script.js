@@ -439,6 +439,44 @@ if (calcBtn) {
   });
 }
 
+// ---- Send estimate to WhatsApp ----
+function sendEstimateToWhatsApp(e) {
+  e.preventDefault();
+  const type = document.getElementById('resType').textContent;
+  const size = document.getElementById('resSize').textContent;
+  const gsm = document.getElementById('resGsm').textContent;
+  const printing = document.getElementById('resPrint').textContent;
+  const qty = document.getElementById('resQty').textContent;
+  const unitPrice = document.getElementById('resUnit').textContent;
+  const total = document.getElementById('resTotal').textContent;
+
+  let text = `*Quote Request from HWA Website*\n\n`;
+  text += `*Bag Type:* ${type}\n`;
+  text += `*Size:* ${size}\n`;
+  text += `*GSM:* ${gsm}\n`;
+  text += `*Printing:* ${printing}\n`;
+  text += `*Quantity:* ${qty}\n`;
+
+  const pcsPerKgRow = document.getElementById('resPcsPerKgRow');
+  if (pcsPerKgRow && pcsPerKgRow.style.display !== 'none') {
+    text += `*Pieces per Kg:* ${document.getElementById('resPcsPerKg').textContent}\n`;
+  }
+
+  text += `\n*Unit Price:* ${unitPrice}\n`;
+
+  const kgPriceRow = document.getElementById('resKgPriceRow');
+  if (kgPriceRow && kgPriceRow.style.display !== 'none') {
+    text += `*Price per Kg:* ${document.getElementById('resKgPrice').textContent}\n`;
+  }
+
+  text += `*Total Estimate:* ${total}\n`;
+  text += `\nI would like to request a final quote for the above order.`;
+
+  const phone = '923335863444';
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+
 // ---- Smooth scroll for anchor links (same-page only) ----
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
