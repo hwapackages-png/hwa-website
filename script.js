@@ -108,6 +108,27 @@ function handleContactForm(e) {
   form.reset();
 }
 
+// ---- Quantity mode toggle ----
+function setQtyMode(mode) {
+  const pcsGroup = document.getElementById('qtyPcsGroup');
+  const kgGroup = document.getElementById('qtyKgGroup');
+  const pcsBtn = document.getElementById('qtyTogglePcs');
+  const kgBtn = document.getElementById('qtyToggleKg');
+  if (mode === 'pcs') {
+    pcsGroup.style.display = '';
+    kgGroup.style.display = 'none';
+    document.getElementById('calc-qty-kg').value = '';
+    pcsBtn.classList.add('active');
+    kgBtn.classList.remove('active');
+  } else {
+    pcsGroup.style.display = 'none';
+    kgGroup.style.display = '';
+    document.getElementById('calc-qty-pcs').value = '';
+    kgBtn.classList.add('active');
+    pcsBtn.classList.remove('active');
+  }
+}
+
 // ---- Price Calculator ----
 const calcBtn = document.getElementById('calcBtn');
 if (calcBtn) {
@@ -147,6 +168,75 @@ if (calcBtn) {
   };
   const printLabels = { none: 'No Printing', one: 'One Color', two: 'Two Color', three: 'Three Color' };
 
+  // Commonly used GSM per bag type
+  const commonGsm = {
+    wcut: [30, 35, 40],
+    dcut: [50, 60, 70],
+    loop: [50, 60, 70],
+    cake: [60],
+    stitch: [60, 70],
+    pouch: [35, 40]
+  };
+
+  // General market sizes per bag type (Size + Measurement only)
+  const marketSizes = {
+    wcut: {
+      headers: ['Size', 'Measurement'],
+      rows: [
+        ['Small', '8 x 11'],
+        ['Medium', '10 x 13'],
+        ['Large', '12 x 15'],
+        ['Extra Large', '15 x 18'],
+        ['Jumbo', '18 x 18'],
+        ['Super Jumbo', '18 x 22'],
+        ['Mega', '22 x 22']
+      ]
+    },
+    dcut: {
+      headers: ['Size', 'Measurement'],
+      rows: [
+        ['Small', '8 x 10'],
+        ['Medium', '10 x 12'],
+        ['Large', '12 x 16'],
+        ['Extra Large', '14 x 18'],
+        ['Jumbo', '16 x 20']
+      ]
+    },
+    loop: {
+      headers: ['Size', 'Measurement'],
+      rows: [
+        ['Small', '10 x 12'],
+        ['Medium', '12 x 15'],
+        ['Large', '14 x 18'],
+        ['Extra Large', '16 x 20']
+      ]
+    },
+    cake: {
+      headers: ['Size', 'Measurement'],
+      rows: [
+        ['1 Pound', '10 x 10 x 10'],
+        ['2 Pound', '12 x 12 x 12']
+      ]
+    },
+    stitch: {
+      headers: ['Size', 'Measurement'],
+      rows: [
+        ['Medium', '12 x 12 x 5'],
+        ['Large', '15 x 18 x 6'],
+        ['Extra Large', '18 x 18 x 8'],
+        ['Jumbo', '18 x 20 x 8']
+      ]
+    },
+    pouch: {
+      headers: ['Size', 'Measurement'],
+      rows: [
+        ['Small', '5 x 7'],
+        ['Medium', '6 x 8'],
+        ['Large', '8 x 10']
+      ]
+    }
+  };
+
   // Show bag preview on type change
   const calcType = document.getElementById('calc-type');
   const calcPreview = document.getElementById('calcPreview');
@@ -168,15 +258,47 @@ if (calcBtn) {
       gussetSep.style.display = 'none';
       gussetInput.value = '';
     }
+    // Force pieces-only for cake bags
+    const qtyToggle = document.querySelector('.calc-qty-toggle');
+    if (val === 'cake' || val === 'stitch') {
+      setQtyMode('pcs');
+      qtyToggle.style.display = 'none';
+    } else {
+      qtyToggle.style.display = '';
+    }
+
     // Show bag preview
+    const sizesRef = document.getElementById('calcSizesRef');
+    const sizesTable = document.getElementById('calcSizesTable');
+    const gsmHint = document.getElementById('calcGsmHint');
     if (val && bagImages[val]) {
       calcPreviewImg.src = bagImages[val];
       calcPreviewImg.alt = typeLabels[val];
       calcPreview.classList.add('visible');
       calcPlaceholder.style.display = 'none';
+
+      // Build sizes reference table
+      const sizes = marketSizes[val];
+      if (sizes) {
+        let html = '<thead><tr>' + sizes.headers.map(h => '<th>' + h + '</th>').join('') + '</tr></thead><tbody>';
+        html += sizes.rows.map(row => '<tr>' + row.map(cell => '<td>' + cell + '</td>').join('') + '</tr>').join('');
+        html += '</tbody>';
+        sizesTable.innerHTML = html;
+        sizesRef.style.display = '';
+      }
+
+      // Show common GSM hint under the GSM dropdown
+      if (commonGsm[val]) {
+        gsmHint.innerHTML = 'Most commonly used: ' + commonGsm[val].map(g => '<strong>' + g + ' GSM</strong>').join(', ');
+        gsmHint.style.display = '';
+      } else {
+        gsmHint.style.display = 'none';
+      }
     } else {
       calcPreview.classList.remove('visible');
       calcPlaceholder.style.display = '';
+      sizesRef.style.display = 'none';
+      gsmHint.style.display = 'none';
     }
   });
 
@@ -290,9 +412,26 @@ if (calcBtn) {
     document.getElementById('resGsm').textContent = gsm + ' GSM';
     document.getElementById('resPrint').textContent = printLabels[print];
     document.getElementById('resQty').textContent = qtyLabel;
+
+    // Show pieces per kg (except for cake and stitch bags)
+    const pcsPerKgRow = document.getElementById('resPcsPerKgRow');
+    if (type !== 'cake' && type !== 'stitch') {
+      const pcsPerKg = Math.round(1 / bagWeightKg);
+      document.getElementById('resPcsPerKg').textContent = pcsPerKg.toLocaleString() + ' pcs';
+      pcsPerKgRow.style.display = '';
+    } else {
+      pcsPerKgRow.style.display = 'none';
+    }
+
     document.getElementById('resUnit').textContent = 'Rs. ' + finalUnit.toFixed(2);
     const pricePerKg = finalUnit / bagWeightKg;
-    document.getElementById('resKgPrice').textContent = 'Rs. ' + pricePerKg.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const kgPriceRow = document.getElementById('resKgPriceRow');
+    if (type !== 'cake' && type !== 'stitch') {
+      document.getElementById('resKgPrice').textContent = 'Rs. ' + pricePerKg.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      kgPriceRow.style.display = '';
+    } else {
+      kgPriceRow.style.display = 'none';
+    }
     document.getElementById('resTotal').textContent = 'Rs. ' + total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     document.querySelector('.calc-result-placeholder').style.display = 'none';

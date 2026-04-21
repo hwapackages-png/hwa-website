@@ -201,20 +201,22 @@
               <option value="70">70 GSM</option>
               <option value="80">80 GSM</option>
             </select>
+            <span class="calc-gsm-hint" id="calcGsmHint" style="display:none"></span>
           </div>
 
           <div class="calc-group">
-            <label>Quantity</label>
-            <div class="calc-qty-row">
-              <div class="calc-qty-col">
-                <input type="number" id="calc-qty-pcs" placeholder="Pieces" min="1000" />
-                <span class="calc-hint">MOQ: 1000 pcs</span>
-              </div>
-              <span class="calc-qty-or">or</span>
-              <div class="calc-qty-col">
-                <input type="number" id="calc-qty-kg" placeholder="Weight (kg)" min="50" />
-                <span class="calc-hint">MOQ: 50 kg</span>
-              </div>
+            <label>Quantity <span class="calc-qty-note">( choose one: pieces or kilos )</span></label>
+            <div class="calc-qty-toggle">
+              <button type="button" class="qty-toggle-btn active" id="qtyTogglePcs" onclick="setQtyMode('pcs')">Pieces</button>
+              <button type="button" class="qty-toggle-btn" id="qtyToggleKg" onclick="setQtyMode('kg')">Kilograms</button>
+            </div>
+            <div id="qtyPcsGroup" class="calc-qty-input">
+              <input type="number" id="calc-qty-pcs" placeholder="Enter quantity in pieces" min="1000" />
+              <span class="calc-hint">MOQ: 1,000 pcs</span>
+            </div>
+            <div id="qtyKgGroup" class="calc-qty-input" style="display:none">
+              <input type="number" id="calc-qty-kg" placeholder="Enter weight in kilograms" min="50" />
+              <span class="calc-hint">MOQ: 50 kg</span>
             </div>
           </div>
 
@@ -256,6 +258,11 @@
           <div class="calc-preview" id="calcPreview">
             <img id="calcPreviewImg" src="" alt="" />
           </div>
+          <div class="calc-sizes-ref" id="calcSizesRef" style="display:none">
+            <h4>General Market Sizes</h4>
+            <table class="pd-sizes" id="calcSizesTable"></table>
+            <p class="calc-sizes-hint">Use these as reference when entering your size above</p>
+          </div>
           <div class="calc-result-placeholder" id="calcPlaceholder">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M9 7h6M9 11h6M9 15h4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
             <p>Select a bag type to preview<br/>then click <strong>Get Estimate</strong></p>
@@ -267,9 +274,10 @@
             <div class="calc-line"><span>GSM</span><span id="resGsm">—</span></div>
             <div class="calc-line"><span>Printing</span><span id="resPrint">—</span></div>
             <div class="calc-line"><span>Quantity</span><span id="resQty">—</span></div>
+            <div class="calc-line" id="resPcsPerKgRow" style="display:none"><span>Pieces per Kg</span><span id="resPcsPerKg">—</span></div>
             <div class="calc-divider"></div>
             <div class="calc-line"><span>Unit Price</span><span id="resUnit">—</span></div>
-            <div class="calc-line"><span>Price per Kg</span><span id="resKgPrice">—</span></div>
+            <div class="calc-line" id="resKgPriceRow"><span>Price per Kg</span><span id="resKgPrice">—</span></div>
             <div class="calc-line calc-total"><span>Total Estimate</span><span id="resTotal">—</span></div>
             <p class="calc-note">* Prices are approximate. Contact us for a final quote.</p>
             <a href="contact.html" class="btn btn-primary full-width">Request Final Quote</a>
